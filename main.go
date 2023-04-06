@@ -47,12 +47,13 @@ func dashBoardHandler() http.HandlerFunc {
 			writer.WriteHeader(http.StatusInternalServerError)
 		}
 
-		var names []string
-		for _, pod := range podList.Items {
-			names = append(names, pod.Name)
+		pods, err := ParseTransparencyInformation(podList)
+		if err != nil {
+			log.Fatalf("parse data categories: %v", err)
+			writer.WriteHeader(http.StatusInternalServerError)
 		}
 
-		fmt.Fprint(writer, names)
+		fmt.Fprint(writer, pods)
 	}
 }
 
