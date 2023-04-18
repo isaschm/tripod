@@ -1,16 +1,9 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
-
-	v1 "k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -18,44 +11,6 @@ const (
 	tlsCertFile = `tls.crt`
 	tlsKeyFile  = `tls.key`
 )
-
-// Returns list of pods in "default" namespace
-func getPods() (*v1.PodList, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("create cluster config: %v", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("create clientset: %v", err)
-	}
-
-	podList, err := clientset.CoreV1().Pods("default").List(context.TODO(), meta.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("list pods: %v", err)
-	}
-	return podList, nil
-}
-
-func dashBoardHandler() http.HandlerFunc {
-	return func(writer http.ResponseWriter, r *http.Request) {
-
-		podList, err := getPods()
-		if err != nil {
-			log.Fatalf("get pod list: %v", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-
-		pods, err := ParseTransparencyInformation(podList)
-		if err != nil {
-			log.Fatalf("parse data categories: %v", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-		}
-
-		fmt.Fprint(writer, pods)
-	}
-}
 
 func main() {
 	certPath := filepath.Join(tlsDir, tlsCertFile)
@@ -65,7 +20,7 @@ func main() {
 	mux.Handle("/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
-	mux.Handle("/map", dashBoardHandler())
+	mux.Handle("/map", mapFuncHandler())
 	server := &http.Server{
 		Addr:    ":8081",
 		Handler: withLogging(log.Default())(mux),
