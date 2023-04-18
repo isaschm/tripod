@@ -41,6 +41,7 @@ func getPods() (*v1.PodList, *kubernetes.Clientset, error) {
 	return podList, clientset, nil
 }
 
+// mapFuncHandler returns a http.Handler serving the map route by calling podTransparencyInformation
 func mapFuncHandler() http.HandlerFunc {
 	return func(writer http.ResponseWriter, r *http.Request) {
 		podList, client, err := getPods()

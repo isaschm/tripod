@@ -39,9 +39,13 @@ func parseDataCategories(s string) ([]DataCategory, error) {
 	return categories, nil
 }
 
+// parseTransparencyInformation gathers transparency information from every pod in podList
+// It checks each pod for data categories, if non are given data categories are added
+// as "unspecified". It also gets ttl and location from the node the pod runs on.
 func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Clientset) ([]Tripod, error) {
 	var pods []Tripod
 	for _, pod := range podList.Items {
+		// Get node via the pod node name
 		node, err := client.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, meta.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("get node: %w", err)
@@ -49,11 +53,15 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 
 		labels := node.GetObjectMeta().GetLabels()
 
+		// Parse pod annotations into a map to get easier access to tags
 		var annotations map[string]string
 		annotations = pod.Annotations
 
 		val, ok := annotations["dataCategories"]
 		if !ok || val == unspecifiedTag {
+			// If data categories are defined at all or tagged as "unspecified" by the
+			// admission controller, return a tripod object with data categories as
+			// "unspecified"
 			pods = append(pods, Tripod{
 				Name:           pod.Name,
 				DataCategories: unspecifiedTag,
@@ -61,6 +69,7 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 				Ttl:            node.Annotations[ttlkey],
 			})
 		} else {
+			// If data categories are defined, return the tripod object with data categories
 			datacategories, err := parseDataCategories(val)
 			if err != nil {
 				return nil, fmt.Errorf("parsing data categories: %w", err)
