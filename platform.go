@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,6 +55,8 @@ func mapFuncHandler() http.HandlerFunc {
 			writer.WriteHeader(http.StatusInternalServerError)
 		}
 
-		fmt.Fprint(writer, pods)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusCreated)
+		json.NewEncoder(writer).Encode(pods)
 	}
 }
