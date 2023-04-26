@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -11,6 +12,27 @@ const (
 	tlsCertFile = `tls.crt`
 	tlsKeyFile  = `tls.key`
 )
+
+// mapFuncHandler returns a http.Handler serving the map route by calling podTransparencyInformation
+func mapFuncHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, r *http.Request) {
+		podList, client, err := getPods()
+		if err != nil {
+			log.Fatalf("get pod list: %v", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+
+		pods, err := parseTransparencyInformation(podList, client)
+		if err != nil {
+			log.Fatalf("parse data categories: %v", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+		}
+
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusCreated)
+		json.NewEncoder(writer).Encode(pods)
+	}
+}
 
 func main() {
 	certPath := filepath.Join(tlsDir, tlsCertFile)

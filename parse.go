@@ -57,6 +57,8 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 		var annotations map[string]string
 		annotations = pod.Annotations
 
+		countryIso := mapLocationKey(labels[locationKey])
+
 		val, ok := annotations["dataCategories"]
 		if !ok || val == unspecifiedTag {
 			// If data categories are defined at all or tagged as "unspecified" by the
@@ -65,7 +67,7 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 			pods = append(pods, Tripod{
 				Name:           pod.Name,
 				DataCategories: unspecifiedTag,
-				NodeLocation:   labels[locationKey],
+				NodeLocation:   countryIso,
 				Ttl:            node.Annotations[ttlkey],
 			})
 		} else {
@@ -77,7 +79,7 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 			pods = append(pods, Tripod{
 				Name:           pod.Name,
 				DataCategories: datacategories,
-				NodeLocation:   labels[locationKey],
+				NodeLocation:   countryIso,
 				Ttl:            node.Annotations[ttlkey],
 			})
 		}
