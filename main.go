@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"reflect"
+
+	"github.com/fatih/structs"
 )
 
 const (
@@ -12,6 +15,29 @@ const (
 	tlsCertFile = `tls.crt`
 	tlsKeyFile  = `tls.key`
 )
+
+func calculateScore(pods []Tripod) map[string]int {
+	score := make(map[string]int)
+
+	score["numPods"] = len(pods)
+	score["completePods"] = 0
+	score["partialPods"] = 0
+
+	for _, pod := range pods {
+		m := structs.Map(pod)
+		iter := reflect.ValueOf(m).MapRange()
+
+	out:
+		for iter.Next() {
+			if iter.Value().Interface().(string) == unspecifiedTag {
+				score["partialPods"] += 1
+				break out
+			}
+			score["completePods"] += 1
+		}
+	}
+	return score
+}
 
 // mapFuncHandler returns a http.Handler serving the map route by calling podTransparencyInformation
 func mapFuncHandler() http.HandlerFunc {
@@ -24,13 +50,16 @@ func mapFuncHandler() http.HandlerFunc {
 
 		pods, err := parseTransparencyInformation(podList, client)
 		if err != nil {
-			log.Fatalf("parse data categories: %v", err)
+			log.Fatalf("parse transparency information: %v", err)
 			writer.WriteHeader(http.StatusInternalServerError)
 		}
 
+		score := calculateScore(pods)
+
 		writer.Header().Set("Content-Type", "application/json")
-		writer.WriteHeader(http.StatusCreated)
+		writer.WriteHeader(http.StatusOK)
 		json.NewEncoder(writer).Encode(pods)
+		json.NewEncoder(writer).Encode(score)
 	}
 }
 

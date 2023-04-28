@@ -15,13 +15,16 @@ type Tripod struct {
 	DataCategories interface{} `json:"dataCategories"`
 	Ttl            string      `json:"ttl"`
 	NodeLocation   string      `json:"nodeLocation"`
+	Necessity      string      `json:"necessity"`
+	AutoDecision   string      `json:"autoDecision"`
 }
 
 type DataCategory struct {
 	Name       string `json:"name"`
 	Purpose    string `json:"purpose,omitempty"`
 	LegalBasis string `json:"legalBasis,omitempty"`
-	Storage    string `json:"stoagre,omitempty"`
+	Storage    string `json:"storage,omitempty"`
+	Recipient  string `json:"recipient,omitempty"`
 }
 
 const (
@@ -59,6 +62,16 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 
 		countryIso := mapLocationKey(labels[locationKey])
 
+		necessity, ok := annotations["necessity"]
+		if !ok {
+			necessity = unspecifiedTag
+		}
+
+		autoDecision, ok := annotations["autoDecision"]
+		if !ok {
+			autoDecision = unspecifiedTag
+		}
+
 		val, ok := annotations["dataCategories"]
 		if !ok || val == unspecifiedTag {
 			// If data categories are defined at all or tagged as "unspecified" by the
@@ -69,6 +82,8 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 				DataCategories: unspecifiedTag,
 				NodeLocation:   countryIso,
 				Ttl:            node.Annotations[ttlkey],
+				Necessity:      necessity,
+				AutoDecision:   autoDecision,
 			})
 		} else {
 			// If data categories are defined, return the tripod object with data categories
@@ -81,6 +96,8 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 				DataCategories: datacategories,
 				NodeLocation:   countryIso,
 				Ttl:            node.Annotations[ttlkey],
+				Necessity:      necessity,
+				AutoDecision:   autoDecision,
 			})
 		}
 	}
