@@ -23,15 +23,15 @@ func calculateScore(pods []Tripod) map[string]int {
 	score["completePods"] = 0
 	score["partialPods"] = 0
 
+ScoreLoop:
 	for _, pod := range pods {
 		m := structs.Map(pod)
 		iter := reflect.ValueOf(m).MapRange()
 
-	out:
 		for iter.Next() {
 			if iter.Value().Interface().(string) == unspecifiedTag {
 				score["partialPods"] += 1
-				break out
+				continue ScoreLoop
 			}
 			score["completePods"] += 1
 		}
