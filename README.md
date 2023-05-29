@@ -1,6 +1,6 @@
 # Transparency Information Pod
 
-This repository contains a small HTTP server called "tripod" or "transparency information pod". Upon being called, the transparency information pod gathers transparency information from each pod running in the default namespace. The returned JSON object is a snapshot of the system's current state of compliance with transparency requirements defined in the [GDPR](https://gdpr.eu/).
+This repository contains a small HTTP server called "tripod" or "transparency information pod". Upon being called, the transparency information pod gathers transparency information from each pod running in the default namespace. The returned JSON object is a snapshot of the system's current state of completeness regarding disclosing transparency requirements defined in the [GDPR](https://gdpr.eu/).
 
 tripod is part of my Computer Science MSc. thesis at TU Berlin.
 

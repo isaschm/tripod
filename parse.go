@@ -11,12 +11,13 @@ import (
 )
 
 type Tripod struct {
-	Name           string      `json:"name"`
-	DataCategories interface{} `json:"dataCategories"`
-	Ttl            string      `json:"ttl"`
-	NodeLocation   string      `json:"nodeLocation"`
-	Necessity      string      `json:"necessity"`
-	AutoDecision   string      `json:"autoDecision"`
+	Name           string         `json:"name"`
+	DataCategories []DataCategory `json:"dataCategories,omitempty"`
+	Ttl            string         `json:"ttl"`
+	NodeLocation   string         `json:"nodeLocation"`
+	Necessity      string         `json:"necessity"`
+	AutoDecision   string         `json:"autoDecision"`
+	DataDisclosed  string         `json:"dataDisclosed,omitempty"`
 }
 
 type DataCategory struct {
@@ -78,12 +79,12 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 			// admission controller, return a tripod object with data categories as
 			// "unspecified"
 			pods = append(pods, Tripod{
-				Name:           pod.Name,
-				DataCategories: unspecifiedTag,
-				NodeLocation:   countryIso,
-				Ttl:            node.Annotations[ttlkey],
-				Necessity:      necessity,
-				AutoDecision:   autoDecision,
+				Name:          pod.Name,
+				DataDisclosed: unspecifiedTag,
+				NodeLocation:  countryIso,
+				Ttl:           node.Annotations[ttlkey],
+				Necessity:     necessity,
+				AutoDecision:  autoDecision,
 			})
 		} else {
 			// If data categories are defined, return the tripod object with data categories
@@ -101,6 +102,5 @@ func parseTransparencyInformation(podList *v1.PodList, client *kubernetes.Client
 			})
 		}
 	}
-
 	return pods, nil
 }
