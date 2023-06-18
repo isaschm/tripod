@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"reflect"
-
-	"github.com/fatih/structs"
 )
 
 const (
@@ -16,25 +14,31 @@ const (
 	tlsKeyFile  = `tls.key`
 )
 
-func calculateScore(pods []Tripod) map[string]int {
-	score := make(map[string]int)
+type Score struct {
+	NumPods             int      `json:"numPods"`
+	IncompletePodsCount int      `json:"partialPods"`
+	IncompletePods      []string `json:"incompletePods,omitempty"`
+}
 
-	score["numPods"] = len(pods)
-	score["completePods"] = 0
-	score["partialPods"] = 0
+func calculateScore(pods []Tripod) Score {
+	score := Score{NumPods: len(pods), IncompletePodsCount: 0}
+	incompletePods := []string{}
 
 ScoreLoop:
 	for _, pod := range pods {
-		m := structs.Map(pod)
-		iter := reflect.ValueOf(m).MapRange()
+		v := reflect.ValueOf(pod)
 
-		for iter.Next() {
-			if iter.Value().Interface().(string) == unspecifiedTag {
-				score["partialPods"] += 1
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			if field.Type().String() == "string" && field.String() == unspecifiedTag {
+				score.IncompletePodsCount += 1
+				incompletePods = append(incompletePods, pod.Name)
 				continue ScoreLoop
 			}
-			score["completePods"] += 1
 		}
+	}
+	if len(incompletePods) > 0 {
+		score.IncompletePods = incompletePods
 	}
 	return score
 }
